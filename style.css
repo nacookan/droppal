@@ -1,0 +1,804 @@
+/* ============================================================================
+   DropPal スタイルシート(パステル・ライトテーマ)
+
+   レイアウトの原則:
+   - ページ(document)はスクロールさせない。html/body は overflow:hidden
+   - #app を position:fixed で画面に貼り付け、高さは --app-height
+     (js/viewport.js が visualViewport から常時更新)に一致させる
+   - #app の中は「ステータスバー(固定) / main(残り全部) / (チャット時)入力欄」
+     の flex 縦積み。スクロールは各画面の内側だけで発生させる
+   ============================================================================ */
+
+:root {
+  /* まぶしくならないよう、真っ白は使わず全体を少し落ち着かせたパステル */
+  --bg: #e2e5f0;
+  --surface: #f1f2f8;
+  --surface-2: #e7eaf4;
+  --border: #d3d7e6;
+  --text: #3c4257;
+  --text-dim: #858ba3;
+  --primary: #7c99f2;
+  --primary-dark: #6383e6;
+  --danger: #d96276;
+  --success: #40a075;
+  --bubble-self: #cbd9f8;
+  --bubble-self-text: #33406b;
+  --bubble-peer: #f1f2f8;
+  --radius: 16px;
+  --shadow-card: 0 2px 14px rgba(96, 116, 186, 0.12);
+  --shadow-soft: 0 1px 5px rgba(96, 116, 186, 0.12);
+}
+
+* { box-sizing: border-box; }
+
+/* [hidden]属性が display:flex 等のクラス指定に負けないようにする */
+[hidden] { display: none !important; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, "Hiragino Sans", "Yu Gothic", "Segoe UI", sans-serif;
+}
+
+/* アプリシェル。画面(可視領域)にピッタリ固定し、この中だけで完結させる */
+#app {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 100vh;               /* 最終フォールバック */
+  height: 100dvh;              /* dvh対応ブラウザ */
+  height: var(--app-height, 100dvh); /* visualViewport追従(キーボード対応) */
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--bg);
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   画面(スクリーン)共通
+   --------------------------------------------------------------------------- */
+
+.screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* チャット画面はchat-logが内部スクロールを持つため、screen自体は
+   スクロールさせない(二重スクロール防止) */
+#screen-chat {
+  overflow-y: hidden;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 24px 20px;
+  max-width: 560px;
+  margin: 0 auto;
+  width: 100%;
+  box-shadow: var(--shadow-card);
+}
+
+.card.center {
+  text-align: center;
+  margin-top: 18vh;
+}
+
+/* ---------------------------------------------------------------------------
+   スタート画面(ヒーロー)
+   --------------------------------------------------------------------------- */
+
+.hero-card h1 {
+  text-align: center;
+}
+
+.hero-card .btn-primary {
+  margin: 4px 0 2px;
+}
+
+.hero-icon {
+  display: flex;
+  justify-content: center;
+  margin: 4px 0 16px;
+  animation: pop-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.hero-icon svg {
+  filter: drop-shadow(0 8px 20px rgba(124, 153, 242, 0.35));
+}
+
+/* 招待URLから初めてDropPalに来た人向けの簡易ブランド表示 */
+.brand-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.brand-header-left {
+  justify-content: flex-start;
+  margin-bottom: 26px;
+}
+
+.brand-icon {
+  flex-shrink: 0;
+  filter: drop-shadow(0 4px 10px rgba(124, 153, 242, 0.3));
+}
+
+.brand-name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+}
+
+.brand-welcome {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+.brand-welcome strong {
+  color: var(--text);
+}
+
+.step-title {
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--text);
+  margin: 0 0 10px;
+}
+
+.step-icon {
+  display: flex;
+  justify-content: center;
+  margin: 0 0 28px;
+  animation: pop-in 0.5s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+@keyframes pop-in {
+  from { opacity: 0; transform: scale(0.85) translateY(6px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---------------------------------------------------------------------------
+   テキスト・見出し
+   --------------------------------------------------------------------------- */
+
+h1 {
+  font-size: 1.4rem;
+  margin: 0 0 12px;
+}
+
+h2 {
+  font-size: 1rem;
+  margin: 34px 0 8px;
+  color: var(--text);
+  font-weight: 700;
+}
+
+h2:first-of-type {
+  margin-top: 0;
+}
+
+.lead {
+  color: var(--text-dim);
+  line-height: 1.7;
+  font-size: 0.95rem;
+}
+
+.hint {
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  margin-top: 12px;
+}
+
+/* カードの外、画面の一番下に置く「トップへ戻る」の控えめなリンク */
+.back-link {
+  flex-shrink: 0;
+  display: block;
+  text-align: center;
+  margin: 20px auto 4px;
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  text-decoration: underline;
+}
+
+.hint.small {
+  font-size: 0.78rem;
+  margin: 6px 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+   開閉式の「技術的な話」
+   --------------------------------------------------------------------------- */
+
+.about-details {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+}
+
+.about-details summary {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--text-dim);
+  list-style: none;
+  user-select: none;
+  text-align: left;
+}
+
+.about-details summary::-webkit-details-marker {
+  display: none;
+}
+
+.about-details summary::marker {
+  content: '';
+}
+
+.about-lock {
+  flex-shrink: 0;
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.about-summary-text::after {
+  content: '▾';
+  display: inline-block;
+  margin-left: 8px;
+  font-size: 1.15rem;
+  line-height: 1;
+  vertical-align: -0.15em;
+  transition: transform 0.15s;
+}
+
+.about-details[open] .about-summary-text::after {
+  transform: rotate(180deg);
+}
+
+.about-content {
+  margin-top: 10px;
+  font-size: 0.82rem;
+  line-height: 1.7;
+  color: var(--text-dim);
+}
+
+.about-content p {
+  margin: 0 0 10px;
+}
+
+.about-content p:last-child {
+  margin-bottom: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   ボタン・入力・コピー行
+   --------------------------------------------------------------------------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  font-size: 1rem;
+  border-radius: 12px;
+  border: none;
+  cursor: pointer;
+  font-weight: 600;
+  transition: background 0.15s, transform 0.05s;
+  touch-action: manipulation;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn-primary {
+  background: var(--primary);
+  color: #fff;
+  width: 100%;
+  box-shadow: 0 4px 12px rgba(124, 153, 242, 0.35);
+}
+
+.btn-primary:hover {
+  background: var(--primary-dark);
+}
+
+.btn-copy {
+  background: var(--surface);
+  color: var(--primary-dark);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  min-width: 72px;
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+.copyrow {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+}
+
+/* 貼り付け欄の直下にボタンが続く場合、少し間隔をあける */
+.copyrow + .btn-primary {
+  margin-top: 12px;
+}
+
+.code-field {
+  flex: 1;
+  min-width: 0;
+  min-height: 48px;
+  padding: 10px 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.82rem;
+  word-break: break-all;
+}
+
+.code-textarea {
+  resize: none;
+  line-height: 1.4;
+}
+
+.copied-msg {
+  color: var(--success);
+  font-size: 0.85rem;
+  margin: 6px 0 0;
+}
+
+.error-msg {
+  color: var(--danger);
+  font-size: 0.88rem;
+  margin: 10px 0 0;
+}
+
+/* ---------------------------------------------------------------------------
+   注意書き
+   --------------------------------------------------------------------------- */
+
+.notice {
+  margin-top: 30px;
+  padding: 12px 14px;
+  background: #f3ecd4;
+  border: 1px solid #e2d3a2;
+  border-radius: 12px;
+}
+
+.notice p {
+  margin: 4px 0;
+  font-size: 0.85rem;
+  color: #93803e;
+  line-height: 1.5;
+}
+
+.notice p + p {
+  margin-top: 1.6em;
+}
+
+/* ---------------------------------------------------------------------------
+   スピナー / エラー画面
+   --------------------------------------------------------------------------- */
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  margin: 0 auto 16px;
+  border: 4px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.error-icon {
+  font-size: 2.2rem;
+  margin: 0 0 8px;
+}
+
+#errorText {
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+/* ---------------------------------------------------------------------------
+   言語切り替え(常に画面の隅に表示する控えめなボタン)
+   --------------------------------------------------------------------------- */
+
+.lang-toggle {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 30;
+  min-height: 30px;
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: rgba(241, 242, 248, 0.9);
+  color: var(--text-dim);
+  font-size: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: var(--shadow-soft);
+}
+
+/* ---------------------------------------------------------------------------
+   ステータスバー(アプリシェルの固定ヘッダ)
+   --------------------------------------------------------------------------- */
+
+.statusbar {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.statusbar-dot {
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--text-dim);
+  flex-shrink: 0;
+}
+
+.statusbar-stats {
+  margin-left: auto;
+  padding-left: 8px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-dim);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.statusbar[data-tone="waiting"] .statusbar-dot { background: #e5b64e; }
+.statusbar[data-tone="connecting"] .statusbar-dot { background: #e5b64e; animation: pulse 1s infinite; }
+.statusbar[data-tone="connected"] .statusbar-dot { background: var(--success); }
+.statusbar[data-tone="error"] .statusbar-dot { background: var(--danger); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+/* ---------------------------------------------------------------------------
+   チャット画面
+   --------------------------------------------------------------------------- */
+
+.chat-layout {
+  position: relative;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  max-width: 720px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* スクロールはこの要素だけが持つ */
+.chat-log {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  padding: 8px 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* --- 接続直後に順に出るシステムカード --- */
+
+.connection-info-card {
+  flex-shrink: 0;
+  padding: 12px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  text-align: left;
+  animation: msg-in-peer 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.connection-info-row {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-dim);
+  line-height: 1.7;
+}
+
+.fingerprint-bar {
+  flex-shrink: 0;
+  text-align: left;
+  padding: 16px 14px 14px;
+  background: #dcefe4;
+  border: 1px solid #b9dcc9;
+  border-radius: 12px;
+  box-shadow: var(--shadow-soft);
+  animation: msg-in-peer 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.fingerprint-emoji {
+  text-align: left;
+  font-size: 1.6rem;
+  letter-spacing: 0.25em;
+  line-height: 1.4;
+}
+
+.fingerprint-caption {
+  text-align: left;
+  margin: 8px 0 0;
+  font-size: 0.72rem;
+  color: #54806a;
+  line-height: 1.5;
+}
+
+/* --- メッセージ --- */
+
+.msg {
+  display: flex;
+  flex-direction: column;
+  max-width: 78%;
+  animation: msg-in-peer 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.msg.self {
+  align-self: flex-end;
+  align-items: flex-end;
+  animation-name: msg-in-self;
+}
+
+.msg.peer {
+  align-self: flex-start;
+  align-items: flex-start;
+  animation-name: msg-in-peer;
+}
+
+@keyframes msg-in-self {
+  from { opacity: 0; transform: translate(14px, 6px) scale(0.96); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+
+@keyframes msg-in-peer {
+  from { opacity: 0; transform: translate(-14px, 6px) scale(0.96); }
+  to { opacity: 1; transform: translate(0, 0) scale(1); }
+}
+
+.msg-bubble {
+  padding: 10px 13px;
+  border-radius: 16px;
+  background: var(--bubble-peer);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow-soft);
+  line-height: 1.45;
+  font-size: 0.95rem;
+  word-break: break-word;
+  white-space: pre-wrap;
+}
+
+.msg.self .msg-bubble {
+  background: var(--bubble-self);
+  border-color: transparent;
+  color: var(--bubble-self-text);
+}
+
+.msg-time {
+  font-size: 0.7rem;
+  color: var(--text-dim);
+  margin-top: 3px;
+  padding: 0 4px;
+}
+
+/* --- ファイルメッセージ --- */
+
+.msg-file .msg-bubble {
+  min-width: 200px;
+  /* テンプレートの改行を空行として描画しないよう通常の折り返しに戻す */
+  white-space: normal;
+}
+
+.file-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin-bottom: 2px;
+  word-break: break-all;
+}
+
+.file-meta {
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 6px;
+}
+
+.msg.self .file-meta {
+  color: #6b7ba8;
+}
+
+.progress {
+  height: 6px;
+  border-radius: 4px;
+  background: rgba(99, 131, 230, 0.15);
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  width: 0%;
+  background: var(--primary);
+  transition: width 0.15s;
+}
+
+.file-download {
+  display: inline-block;
+  margin-top: 8px;
+  color: #fff;
+  background: var(--success);
+  padding: 8px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  text-decoration: none;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgba(69, 169, 124, 0.3);
+}
+
+/* --- 入力中インジケーター --- */
+
+.typing-indicator {
+  flex-shrink: 0;
+  margin: 0 0 2px;
+  padding: 0 6px;
+  font-size: 0.78rem;
+  color: var(--text-dim);
+  font-style: italic;
+}
+
+/* --- 入力欄(アプリシェル下端の固定行) --- */
+
+.chat-input-row {
+  flex-shrink: 0;
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  padding: 8px 0 4px;
+}
+
+.chat-input-row textarea {
+  flex: 1;
+  min-width: 0;
+  height: 64px;
+  resize: none;
+  padding: 10px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  color: var(--text);
+  font-size: 1rem;
+  font-family: inherit;
+  line-height: 1.4;
+  box-shadow: var(--shadow-soft);
+}
+
+.chat-input-row textarea:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: -1px;
+}
+
+.btn-attach {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  width: 74px;
+  height: 64px;
+  padding: 0;
+  border-radius: 18px;
+  font-size: 0.68rem;
+  line-height: 1.2;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--text);
+  box-shadow: var(--shadow-soft);
+}
+
+.btn-attach span:first-child {
+  font-size: 1.3rem;
+}
+
+.btn-send {
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  padding: 0;
+  border-radius: 18px;
+  font-size: 1.5rem;
+  background: var(--primary);
+  border: none;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(124, 153, 242, 0.35);
+}
+
+/* --- ドラッグ&ドロップのオーバーレイ --- */
+
+.drop-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 16px;
+  background: rgba(226, 229, 240, 0.92);
+  border: 2px dashed var(--primary);
+  border-radius: var(--radius);
+  color: var(--text);
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.drop-overlay-icon {
+  font-size: 2.1rem;
+  margin: 0 0 6px;
+}
+
+/* ---------------------------------------------------------------------------
+   その他
+   --------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .msg,
+  .hero-icon,
+  .step-icon,
+  .connection-info-card,
+  .fingerprint-bar {
+    animation: none;
+  }
+}
+
+@media (min-width: 700px) {
+  .screen { padding: 32px; }
+}

@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, interactive-widget=resizes-content">
+<meta name="theme-color" content="#e2e5f0">
+<title>DropPal</title>
+
+<!-- favicon -->
+<link rel="icon" href="icons/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="icons/favicon-48.png" sizes="48x48" type="image/png">
+<link rel="icon" href="icons/favicon-32.png" sizes="32x32" type="image/png">
+<!-- iOSホーム画面追加時のアイコン -->
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<!-- Android等の「ホーム画面に追加」用アイコン・アプリ名 -->
+<link rel="manifest" href="site.webmanifest">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- アプリ全体を1枚のシェルとして画面に固定する。
+     ヘッダ(固定) / コンテンツ(内部スクロール) / 入力欄(固定) の3段構成で、
+     ページ(document)自体は一切スクロールさせない。 -->
+<div id="app">
+
+<button class="lang-toggle" id="langToggle" type="button" aria-label="Change language / 言語を切り替え"></button>
+
+<header class="statusbar" id="statusbar" hidden>
+  <span class="statusbar-dot" id="statusDot"></span>
+  <span class="statusbar-text" id="statusText"></span>
+  <span class="statusbar-stats" id="statusStats" hidden></span>
+</header>
+
+<main>
+
+  <!-- スタート画面 -->
+  <section class="screen" id="screen-start">
+    <div class="card hero-card">
+      <div class="hero-icon" aria-hidden="true">
+        <svg viewBox="0 0 96 96" width="88" height="88" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="heroGrad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a9c2ff"/>
+              <stop offset="100%" stop-color="#7c99f2"/>
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="88" height="88" rx="22" ry="22" fill="url(#heroGrad)"/>
+          <path d="M48 18 C61 33 70 45 70 57 C70 70.25 60.15 80 48 80 C35.85 80 26 70.25 26 57 C26 45 35 33 48 18 Z" fill="#ffffff"/>
+          <g stroke="#7c99f2" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M35 49 H61"/>
+            <path d="M53 43 L61 49 L53 55"/>
+            <path d="M61 65 H35"/>
+            <path d="M43 59 L35 65 L43 71"/>
+          </g>
+        </svg>
+      </div>
+      <h1>DropPal</h1>
+      <p class="lead" data-i18n="startLead"></p>
+      <button class="btn btn-primary" id="btnCreateRoom" data-i18n="startButton"></button>
+      <p class="hint" data-i18n="startHint"></p>
+
+      <details class="about-details">
+        <summary>
+          <span class="about-lock" aria-hidden="true">🔒</span>
+          <span class="about-summary-text" data-i18n="aboutSummary"></span>
+        </summary>
+        <div class="about-content">
+          <p data-i18n="aboutP1"></p>
+          <p data-i18n="aboutP2"></p>
+          <p data-i18n="aboutP3"></p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <!-- 準備中(共通スピナー) -->
+  <section class="screen" id="screen-preparing" hidden>
+    <div class="card center">
+      <div class="brand-header">
+        <svg class="brand-icon" viewBox="0 0 96 96" width="36" height="36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="brandGradPreparing" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a9c2ff"/>
+              <stop offset="100%" stop-color="#7c99f2"/>
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="88" height="88" rx="22" ry="22" fill="url(#brandGradPreparing)"/>
+          <path d="M48 18 C61 33 70 45 70 57 C70 70.25 60.15 80 48 80 C35.85 80 26 70.25 26 57 C26 45 35 33 48 18 Z" fill="#ffffff"/>
+          <g stroke="#7c99f2" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M35 49 H61"/>
+            <path d="M53 43 L61 49 L53 55"/>
+            <path d="M61 65 H35"/>
+            <path d="M43 59 L35 65 L43 71"/>
+          </g>
+        </svg>
+        <span class="brand-name">DropPal</span>
+      </div>
+      <div class="spinner" aria-hidden="true"></div>
+      <p id="preparingText" data-i18n="preparingDefault"></p>
+    </div>
+  </section>
+
+  <!-- ホスト: 招待URL表示 & 返信コード入力待ち -->
+  <section class="screen" id="screen-host-waiting" hidden>
+    <div class="card">
+      <p class="step-title" data-i18n="hostStepTitle"></p>
+      <div class="step-icon" aria-hidden="true">
+        <svg viewBox="0 0 96 96" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#8fa5f0" stroke-width="4" fill="none" stroke-linecap="round">
+            <circle cx="48" cy="48" r="30"/>
+            <ellipse cx="48" cy="48" rx="13" ry="30"/>
+            <path d="M18 48 H78"/>
+            <path d="M21 34 H75"/>
+            <path d="M21 62 H75"/>
+          </g>
+        </svg>
+      </div>
+      <h2 data-i18n="hostH2Invite"></h2>
+      <div class="copyrow">
+        <input type="text" id="inviteUrlField" readonly class="code-field">
+        <button class="btn btn-copy" id="btnCopyInvite" data-target="inviteUrlField" data-i18n="copy"></button>
+      </div>
+      <p class="hint small" id="inviteUrlLengthHint"></p>
+      <p class="copied-msg" id="inviteCopiedMsg" hidden data-i18n="copied"></p>
+
+      <h2 data-i18n="hostH2Reply"></h2>
+      <div class="copyrow">
+        <textarea id="replyCodeInput" class="code-field code-textarea" data-i18n-placeholder="replyPlaceholder" rows="3"></textarea>
+      </div>
+      <button class="btn btn-primary" id="btnSubmitReply" data-i18n="connectButton"></button>
+      <p class="error-msg" id="hostReplyError" hidden></p>
+      <p class="hint" id="hostSlowHint" hidden data-i18n="hostSlowHint"></p>
+
+      <div class="notice">
+        <p data-i18n="noticeDontClose"></p>
+      </div>
+    </div>
+    <a class="back-link" id="backLinkHost" href="/" data-i18n="backToTop"></a>
+  </section>
+
+  <!-- ゲスト: 返信コード表示 -->
+  <section class="screen" id="screen-guest-waiting" hidden>
+    <div class="card">
+      <div class="brand-header brand-header-left">
+        <svg class="brand-icon" viewBox="0 0 96 96" width="40" height="40" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+          <defs>
+            <linearGradient id="brandGradGuestWaiting" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0%" stop-color="#a9c2ff"/>
+              <stop offset="100%" stop-color="#7c99f2"/>
+            </linearGradient>
+          </defs>
+          <rect x="4" y="4" width="88" height="88" rx="22" ry="22" fill="url(#brandGradGuestWaiting)"/>
+          <path d="M48 18 C61 33 70 45 70 57 C70 70.25 60.15 80 48 80 C35.85 80 26 70.25 26 57 C26 45 35 33 48 18 Z" fill="#ffffff"/>
+          <g stroke="#7c99f2" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round" fill="none">
+            <path d="M35 49 H61"/>
+            <path d="M53 43 L61 49 L53 55"/>
+            <path d="M61 65 H35"/>
+            <path d="M43 59 L35 65 L43 71"/>
+          </g>
+        </svg>
+        <p class="brand-welcome" data-i18n-html="guestWelcomeHtml"></p>
+      </div>
+      <div class="step-icon" aria-hidden="true">
+        <svg viewBox="0 0 96 96" width="64" height="64" xmlns="http://www.w3.org/2000/svg">
+          <g stroke="#8fa5f0" stroke-width="4" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <!-- 封筒から手紙が出ている招待状 -->
+            <path d="M30 44 V20 a4 4 0 0 1 4 -4 H62 a4 4 0 0 1 4 4 V44"/>
+            <path d="M38 26 H58"/>
+            <path d="M38 34 H52"/>
+            <path d="M18 44 V72 a8 8 0 0 0 8 8 H70 a8 8 0 0 0 8 -8 V44"/>
+            <path d="M18 44 L48 62 L78 44"/>
+          </g>
+        </svg>
+      </div>
+      <h2 data-i18n="guestH2Reply"></h2>
+      <div class="copyrow">
+        <textarea id="replyCodeField" readonly class="code-field code-textarea" rows="3"></textarea>
+        <button class="btn btn-copy" id="btnCopyReply" data-target="replyCodeField" data-i18n="copy"></button>
+      </div>
+      <p class="hint small" id="replyCodeLengthHint"></p>
+      <p class="copied-msg" id="replyCopiedMsg" hidden data-i18n="copied"></p>
+
+      <div class="notice">
+        <p data-i18n-html="noticeTrustedOnlyHtml"></p>
+        <p data-i18n-html="noticeComeBackHtml"></p>
+        <p data-i18n="noticeDontClose"></p>
+      </div>
+
+      <details class="about-details">
+        <summary>
+          <span class="about-lock" aria-hidden="true">🔒</span>
+          <span class="about-summary-text" data-i18n="aboutSummary"></span>
+        </summary>
+        <div class="about-content">
+          <p data-i18n="aboutP1"></p>
+          <p data-i18n="aboutP2"></p>
+        </div>
+      </details>
+    </div>
+    <a class="back-link" id="backLinkGuest" href="/" data-i18n="backToTop"></a>
+  </section>
+
+  <!-- エラー / 切断画面 -->
+  <section class="screen" id="screen-error" hidden>
+    <div class="card center">
+      <p class="error-icon" aria-hidden="true">⚠️</p>
+      <p id="errorText"></p>
+      <button class="btn btn-primary" id="btnRestart" data-i18n="btnRestart"></button>
+    </div>
+  </section>
+
+  <!-- チャット画面 -->
+  <section class="screen" id="screen-chat" hidden>
+    <div class="chat-layout" id="chatLayout">
+      <div class="chat-log" id="chatLog">
+        <div class="connection-info-card" id="connectionInfoCard" hidden>
+          <p class="connection-info-row" data-i18n="connectionInfoP2P"></p>
+          <p class="connection-info-row" data-i18n="connectionInfoEncrypted"></p>
+          <p class="connection-info-row" id="connectionRouteRow" data-i18n="connectionRouteChecking"></p>
+        </div>
+        <div class="fingerprint-bar" id="fingerprintBar" hidden>
+          <div class="fingerprint-emoji" id="fingerprintEmoji"></div>
+          <p class="fingerprint-caption" data-i18n="fingerprintCaption"></p>
+        </div>
+        <div class="connection-info-card" id="connectedMessageCard" hidden>
+          <p class="connection-info-row" data-i18n="connectedMessage"></p>
+        </div>
+      </div>
+
+      <p class="typing-indicator" id="typingIndicator" hidden data-i18n="typingIndicator"></p>
+
+      <form class="chat-input-row" id="chatForm">
+        <button class="btn btn-attach" id="btnPickFile" type="button" data-i18n-title="attachTitle">
+          <span aria-hidden="true">📁</span>
+          <span data-i18n="attachLabel"></span>
+        </button>
+        <input type="file" id="fileInput" multiple hidden>
+        <textarea id="chatInput" data-i18n-placeholder="chatPlaceholder" rows="1"></textarea>
+        <button class="btn btn-send" type="submit" data-i18n-title="sendLabel" data-i18n-aria-label="sendLabel">➤</button>
+      </form>
+
+      <div class="drop-overlay" id="dropOverlay" hidden>
+        <div>
+          <p class="drop-overlay-icon" aria-hidden="true">📥</p>
+          <p data-i18n="dropOverlayText"></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+</div><!-- /#app -->
+
+<template id="tmpl-msg-text">
+  <div class="msg">
+    <div class="msg-bubble"></div>
+    <div class="msg-time"></div>
+  </div>
+</template>
+
+<template id="tmpl-msg-file">
+  <div class="msg msg-file">
+    <div class="msg-bubble">
+      <div class="file-name"></div>
+      <div class="file-meta"></div>
+      <div class="progress"><div class="progress-bar"></div></div>
+      <a class="file-download" hidden download></a>
+    </div>
+    <div class="msg-time"></div>
+  </div>
+</template>
+
+<script type="module" src="js/app.js"></script>
+</body>
+</html>
