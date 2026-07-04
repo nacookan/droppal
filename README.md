@@ -4,6 +4,10 @@ DropPal は、二者間でブラウザだけでサーバーを経由せずにフ
 
 アカウント登録やインストールは不要です。相手と同じ時間に画面を開き、招待URLと返信コードをやりとりすると接続できます。
 
+DropPal lets two people send files and messages directly between browsers, with no server in between.
+
+No account or install is needed. Just open the page at the same time as the other person, and exchange an invite link and a reply code to connect.
+
 ## 使い方
 
 1. 招待する人: DropPal を開いて「はじめる」を押す
