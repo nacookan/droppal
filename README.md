@@ -1,5 +1,13 @@
 # DropPal
 
+DropPal は下記のURLで今すぐ利用できます。 You can use DropPal right now at the link below:
+
+ [https://nacookan.github.io/droppal/](https://nacookan.github.io/droppal/) 
+
+## 概要/Summary
+
+![DropPal screenshot](docs/screenshot1.png)
+
 DropPal は、二者間でブラウザだけでサーバーを経由せずにファイルやメッセージを直接やりとりできるツールです。
 
 アカウント登録やインストールは不要です。相手と同じ時間に画面を開き、招待URLと返信コードをやりとりすると接続できます。
