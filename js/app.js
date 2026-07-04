@@ -2,7 +2,7 @@ import { CopyPasteSignaling } from './signaling.js';
 import { RtcConnection } from './rtc-connection.js';
 import { copyText } from './clipboard.js';
 import { formatBytes, formatBps, formatTime, randomShortToken } from './utils.js';
-import { computeFingerprintEmoji } from './fingerprint.js';
+import { computeFingerprintEmoji } from './verify-emoji.js';
 import { initViewportController } from './viewport.js';
 import { startStatsMonitor } from './stats.js';
 import { t, getLang, setLang, initI18n } from './i18n.js';
