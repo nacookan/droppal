@@ -56,6 +56,8 @@ export class RtcConnection {
     this.channel = null;
     this._currentReceive = null;
     this._sendQueue = Promise.resolve();
+    this._currentSendId = null;
+    this._cancelRequested = false;
 
     this.pc.addEventListener('connectionstatechange', () => {
       this.handlers.onConnectionStateChange?.(this.pc.connectionState);
@@ -117,6 +119,13 @@ export class RtcConnection {
         this.handlers.onReceiveProgress?.({ ...this._currentReceive, received: 0 });
       } else if (msg.type === 'file-end') {
         this._finishReceivingFile(msg.id);
+      } else if (msg.type === 'file-cancel') {
+        if (this._currentReceive && this._currentReceive.id === msg.id) {
+          this._currentReceive = null;
+          this.handlers.onReceiveCancelled?.(msg.id);
+        }
+      } else if (msg.type === 'file-delete') {
+        this.handlers.onFileDeleted?.(msg.id);
       }
     } else {
       this._appendChunk(data);
@@ -190,6 +199,9 @@ export class RtcConnection {
 
   async _sendOneFile(file, index, total) {
     const id = createId();
+    this._currentSendId = id;
+    this._cancelRequested = false;
+
     const meta = {
       type: 'file-meta',
       id,
@@ -208,6 +220,7 @@ export class RtcConnection {
     // (相手の受信待ち)の間にディスク読み込みを終わらせ、待ち時間を隠す。
     let nextChunkPromise = this._readChunk(file, offset);
     while (offset < file.size) {
+      if (this._cancelRequested) break;
       const buffer = await nextChunkPromise;
       const nextOffset = offset + buffer.byteLength;
       nextChunkPromise = nextOffset < file.size ? this._readChunk(file, nextOffset) : null;
@@ -223,7 +236,29 @@ export class RtcConnection {
         this.handlers.onSendProgress?.({ id, name: file.name, size: file.size, index, total, sent: offset });
       }
     }
+
+    this._currentSendId = null;
+    if (this._cancelRequested) {
+      this._cancelRequested = false;
+      this.channel.send(JSON.stringify({ type: 'file-cancel', id }));
+      this.handlers.onSendCancelled?.(id);
+      return;
+    }
     this.channel.send(JSON.stringify({ type: 'file-end', id }));
+  }
+
+  /** 送信中のファイルをキャンセルする(送信側専用) */
+  cancelSend(id) {
+    if (this._currentSendId === id) {
+      this._cancelRequested = true;
+    }
+  }
+
+  /** 送信済みファイルの削除を相手に伝える(送信側専用) */
+  deleteFile(id) {
+    if (this.channel && this.channel.readyState === 'open') {
+      this.channel.send(JSON.stringify({ type: 'file-delete', id }));
+    }
   }
 
   _readChunk(file, offset) {

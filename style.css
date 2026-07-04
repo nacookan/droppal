@@ -683,6 +683,47 @@ h2:first-of-type {
   box-shadow: 0 2px 8px rgba(69, 169, 124, 0.3);
 }
 
+.file-cancel-btn {
+  display: inline-block;
+  margin-top: 8px;
+  color: var(--text-dim);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.file-cancel-btn:hover {
+  background: rgba(0, 0, 0, 0.04);
+}
+
+.msg.peer .file-cancel-btn {
+  display: none;
+}
+
+.file-delete-btn {
+  display: inline-block;
+  margin-top: 8px;
+  margin-left: 6px;
+  color: var(--danger);
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 6px 12px;
+  border-radius: 10px;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.file-delete-btn:hover {
+  background: rgba(217, 98, 118, 0.08);
+}
+
+.msg.peer .file-delete-btn {
+  display: none;
+}
+
 /* --- 入力中インジケーター --- */
 
 .typing-indicator {

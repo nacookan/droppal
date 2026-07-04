@@ -246,7 +246,11 @@ function buildConnection() {
     },
     onSendProgress: ({ id, name, size, index, total, sent }) => {
       ensureFileMessage('self', id, name, size, index, total);
-      updateFileProgress(id, sent, size);
+      if (sent >= size) {
+        finalizeFileMessage(id);
+      } else {
+        updateFileProgress(id, sent, size);
+      }
     },
     onReceiveProgress: ({ id, name, size, index, total, received }) => {
       ensureFileMessage('peer', id, name, size, index, total);
@@ -254,6 +258,15 @@ function buildConnection() {
     },
     onFileComplete: ({ id, name, size, url, index, total }) => {
       finalizeReceivedFile(id, name, size, url);
+    },
+    onSendCancelled: (id) => {
+      cancelFileMessage(id);
+    },
+    onReceiveCancelled: (id) => {
+      cancelFileMessage(id);
+    },
+    onFileDeleted: (id) => {
+      markFileDeleted(id);
     },
   });
 }
@@ -309,31 +322,96 @@ function ensureFileMessage(who, id, name, size, index, total) {
   const msg = node.querySelector('.msg');
   msg.classList.add(who);
   node.querySelector('.file-name').textContent = name;
+  const indexPrefix = total > 1 ? `(${index + 1}/${total}) ` : '';
   const metaEl = node.querySelector('.file-meta');
-  metaEl.textContent = `${total > 1 ? `(${index + 1}/${total}) ` : ''}${formatBytes(size)}`;
+  const startTime = Date.now();
+  metaEl.textContent = `${indexPrefix}${t('fileSendingMeta', { sent: formatBytes(0), size: formatBytes(size), elapsed: 0 })}`;
   node.querySelector('.msg-time').textContent = formatTime(Date.now());
   const bar = node.querySelector('.progress-bar');
+  const progressBox = node.querySelector('.progress');
   const downloadLink = node.querySelector('.file-download');
+  let cancelBtn = node.querySelector('.file-cancel-btn');
+  let deleteBtn = node.querySelector('.file-delete-btn');
+  if (who === 'self') {
+    cancelBtn.textContent = t('fileCancelButton');
+    cancelBtn.hidden = false;
+    cancelBtn.addEventListener('click', () => {
+      cancelBtn.disabled = true;
+      conn?.cancelSend(id);
+    });
+    deleteBtn.textContent = t('fileDeleteButton');
+    deleteBtn.addEventListener('click', () => {
+      conn?.deleteFile(id);
+      markFileDeleted(id);
+    });
+  } else {
+    cancelBtn.remove();
+    cancelBtn = null;
+    deleteBtn.remove();
+    deleteBtn = null;
+  }
   chatLog.appendChild(node);
   chatLog.scrollTop = chatLog.scrollHeight;
-  fileMsgElements.set(id, { bar, downloadLink, metaEl, size, name });
+  fileMsgElements.set(id, { bar, progressBox, downloadLink, metaEl, cancelBtn, deleteBtn, size, name, startTime, indexPrefix, done: false });
 }
 
 function updateFileProgress(id, transferred, size) {
   const el = fileMsgElements.get(id);
-  if (!el) return;
+  if (!el || el.done) return;
   const pct = size === 0 ? 100 : Math.min(100, Math.round((transferred / size) * 100));
   el.bar.style.width = `${pct}%`;
+  const elapsed = Math.max(0, Math.round((Date.now() - el.startTime) / 1000));
+  el.metaEl.textContent = `${el.indexPrefix}${t('fileSendingMeta', { sent: formatBytes(transferred), size: formatBytes(size), elapsed })}`;
+}
+
+function finalizeFileMessage(id) {
+  const el = fileMsgElements.get(id);
+  if (!el || el.done) return;
+  el.done = true;
+  el.bar.style.width = '100%';
+  const elapsed = Math.max(0, Math.round((Date.now() - el.startTime) / 1000));
+  el.metaEl.textContent = `${el.indexPrefix}${t('fileDoneMeta', { size: formatBytes(el.size), elapsed })}`;
+  if (el.cancelBtn) el.cancelBtn.hidden = true;
+  if (el.deleteBtn) el.deleteBtn.hidden = false;
+}
+
+// 受信済みデータ(オブジェクトURL)は破棄しつつ、チャットログには
+// 「削除されました」という記録として残す(キャンセル時の表示と同様)
+function markFileDeleted(id) {
+  const el = fileMsgElements.get(id);
+  if (!el) return;
+  if (el.downloadLink.hasAttribute('href')) {
+    try {
+      URL.revokeObjectURL(el.downloadLink.href);
+    } catch {
+      /* noop */
+    }
+  }
+  el.downloadLink.hidden = true;
+  el.downloadLink.removeAttribute('href');
+  el.progressBox.hidden = true;
+  if (el.cancelBtn) el.cancelBtn.hidden = true;
+  if (el.deleteBtn) el.deleteBtn.hidden = true;
+  el.metaEl.textContent = t('fileDeletedMeta');
 }
 
 function finalizeReceivedFile(id, name, size, url) {
+  finalizeFileMessage(id);
   const el = fileMsgElements.get(id);
   if (!el) return;
-  el.bar.style.width = '100%';
   el.downloadLink.href = url;
   el.downloadLink.download = name;
   el.downloadLink.hidden = false;
   el.downloadLink.textContent = t('downloadWithSize', { size: formatBytes(size) });
+}
+
+function cancelFileMessage(id) {
+  const el = fileMsgElements.get(id);
+  if (!el || el.done) return;
+  el.done = true;
+  el.metaEl.textContent = t('fileCancelledMeta');
+  el.progressBox.hidden = true;
+  if (el.cancelBtn) el.cancelBtn.hidden = true;
 }
 
 // ----------------------------------------------------------------------------
