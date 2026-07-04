@@ -256,8 +256,8 @@ function buildConnection() {
       ensureFileMessage('peer', id, name, size, index, total);
       updateFileProgress(id, received, size);
     },
-    onFileComplete: ({ id, name, size, url, index, total }) => {
-      finalizeReceivedFile(id, name, size, url);
+    onFileComplete: ({ id, name, url }) => {
+      finalizeReceivedFile(id, name, url);
     },
     onSendCancelled: (id) => {
       cancelFileMessage(id);
@@ -395,14 +395,14 @@ function markFileDeleted(id) {
   el.metaEl.textContent = t('fileDeletedMeta');
 }
 
-function finalizeReceivedFile(id, name, size, url) {
+function finalizeReceivedFile(id, name, url) {
   finalizeFileMessage(id);
   const el = fileMsgElements.get(id);
   if (!el) return;
   el.downloadLink.href = url;
   el.downloadLink.download = name;
   el.downloadLink.hidden = false;
-  el.downloadLink.textContent = t('downloadWithSize', { size: formatBytes(size) });
+  el.downloadLink.textContent = t('saveButton');
 }
 
 function cancelFileMessage(id) {
